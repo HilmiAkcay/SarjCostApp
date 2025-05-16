@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.OpenApi; // Needed for WithOpenApi extensions
 
 public static class ApiHelper
 {
     public static void AddMyApiMethods(this WebApplication app)
     {
-        // ===== Example Secured Endpoint =====
+        // ===== Secured Endpoint =====
         app.MapGet(
                 "/secure",
                 (HttpContext context) =>
@@ -13,29 +14,54 @@ public static class ApiHelper
                     return Results.Ok($"Hello, {name}!");
                 }
             )
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .WithName("SecureEndpoint")
+            .WithOpenApi()
+            .WithSummary("Returns user info if authenticated")
+            .WithDescription(
+                "This endpoint returns the authenticated user's name. Requires Google login."
+            );
 
-        app.MapGet("/", () => "Public Endpoint");
+        // ===== Public Endpoint =====
+        app.MapGet("/", () => "Public Endpoint")
+            .WithName("PublicEndpoint")
+            .WithOpenApi()
+            .WithSummary("Returns a public message")
+            .WithDescription("This is a public endpoint accessible without authentication.");
 
-        // ===== Trigger Google Login =====
+        // ===== Google Login =====
         app.MapGet(
-            "/login",
-            () =>
-                Results.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/" },
-                    new[] { "Google" }
-                )
-        );
+                "/login",
+                () =>
+                    Results.Challenge(
+                        new AuthenticationProperties { RedirectUri = "/" },
+                        new[] { "Google" }
+                    )
+            )
+            .WithName("LoginWithGoogle")
+            .WithOpenApi()
+            .WithSummary("Initiates Google OAuth login")
+            .WithDescription(
+                "Redirects the user to Google for authentication. Returns to '/' on success."
+            );
 
         // ===== Logout =====
         app.MapGet(
-            "/logout",
-            async (HttpContext context) =>
-            {
-                await context.SignOutAsync("Cookies");
-                return Results.Redirect("/");
-            }
-        );
+                "/logout",
+                async (HttpContext context) =>
+                {
+                    await context.SignOutAsync("Cookies");
+                    return Results.Redirect("/");
+                }
+            )
+            .WithName("Logout")
+            .WithOpenApi()
+            .WithSummary("Logs out the current user")
+            .WithDescription(
+                "Signs out the current user from the cookie session and redirects to '/'."
+            );
+
+        // ===== Weather Forecast =====
         var summaries = new[]
         {
             "Freezing",
@@ -49,6 +75,7 @@ public static class ApiHelper
             "Sweltering",
             "Scorching",
         };
+
         app.MapGet(
                 "/weatherforecast",
                 () =>
@@ -61,10 +88,14 @@ public static class ApiHelper
                             summaries[Random.Shared.Next(summaries.Length)]
                         ))
                         .ToArray();
+
                     return forecast;
                 }
             )
-            .WithName("GetWeatherForecast");
+            .WithName("GetWeatherForecast")
+            .WithOpenApi()
+            .WithSummary("Returns a 5-day weather forecast")
+            .WithDescription("Generates and returns dummy weather data for testing.");
     }
 
     record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

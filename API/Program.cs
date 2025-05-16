@@ -59,7 +59,7 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Your custom method to add endpoints
+// My Custom Method To Add Endpoints
 app.AddMyApiMethods();
 
 app.Run();
