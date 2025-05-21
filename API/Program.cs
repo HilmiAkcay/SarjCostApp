@@ -1,6 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ====== Postgres DB Setup ======
+builder.Services.AddDbContext<ScDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
 // ====== CORS Setup ======
 builder.Services.AddCors(options =>
